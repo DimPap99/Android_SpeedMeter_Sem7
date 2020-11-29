@@ -8,9 +8,12 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -35,9 +38,12 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity implements LocationListener {
     SharedPreferences preferences;
     EditText editText;
+    SQLiteDatabase db;
     TextView textView;
     LocationManager locationManager;
     Button set_speed_limit;
+    Button check_speed_violations;
+
     public static boolean created_button = false;
 
     public static final String SHARED_PREFS = "speed_limit";
@@ -46,10 +52,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         textView = findViewById(R.id.textView);
+        check_speed_violations = findViewById(R.id.button4);
+        ConstraintLayout constraintLayout = (ConstraintLayout)findViewById(R.id.constraint_layout);
+        ConstraintSet set = new ConstraintSet();
+        db = openOrCreateDatabase("GeoDB", Context.MODE_PRIVATE,null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Location(timestamp INTEGER ,latitude REAL,longtitude REAL, speed REAL )");
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         set_speed_limit = findViewById(R.id.button2);
+
+        check_speed_violations.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(v.getContext(), MainActivity2.class);
+                startActivity(intent);
+            }
+        });
 
         set_speed_limit.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceAsColor")
@@ -57,50 +76,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             @Override
             public void onClick(View v) {
                 if(created_button == false) {
-                    ConstraintLayout constraintLayout = (ConstraintLayout)findViewById(R.id.constraint_layout); //a constraint layout pre-made in design view
-                    EditText editText = new EditText(getApplicationContext());
-                    editText.setLayoutParams(new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT));
-                    editText.setWidth(set_speed_limit.getWidth() + 20 );
-                    editText.setHeight(set_speed_limit.getHeight() - 10);
-                    editText.setId(View.generateViewId());
-                    constraintLayout.addView(editText);
-                    //button.setId();
-                    int x = set_speed_limit.getLeft() ;
-                    int y = set_speed_limit.getTop() + 200;
-                    ConstraintSet set = new ConstraintSet();
-                    set.clone(constraintLayout);
-                    set.connect(editText.getId(), ConstraintSet.LEFT, constraintLayout.getId(), ConstraintSet.LEFT, x);
-                    set.connect(editText.getId(), ConstraintSet.TOP, constraintLayout.getId(), ConstraintSet.TOP, y);
-                    set.applyTo(constraintLayout);
+                     //a constraint layout pre-made in design view
 
-                    Button button = new Button(getApplicationContext());
-                    button.setLayoutParams(new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT));
-                    button.setText("Save");
-                    button.setPadding(10, 2, 10, 2);
-                    button.setWidth(set_speed_limit.getWidth() - 15);
-                    button.setHeight(set_speed_limit.getHeight() - 100);
-                    button.setBackgroundColor(R.color.purple_other);
-                    button.setTextColor(Color.parseColor("#FFFFFF"));
-                    button.setId(View.generateViewId());
-                    constraintLayout.addView(button);
-                    //button.setId();
-                    int x2 = set_speed_limit.getLeft() + 9 ;
-                    int y2 = set_speed_limit.getTop() + 400;
-                    //ConstraintSet set2 = new ConstraintSet();
-                    set.clone(constraintLayout);
-                    set.connect(button.getId(), ConstraintSet.LEFT, constraintLayout.getId(), ConstraintSet.LEFT, x2);
-                    set.connect(button.getId(), ConstraintSet.TOP, constraintLayout.getId(), ConstraintSet.TOP, y2);
-                    set.applyTo(constraintLayout);
+                    EditText editText = Create_Component.create_EditText(set_speed_limit.getWidth() + 20,set_speed_limit.getHeight() - 10,
+                            R.color.black, getApplicationContext(), constraintLayout, set_speed_limit.getLeft(), set_speed_limit.getTop() + 200, set );
 
+                    Button button = Create_Component.create_Button(set_speed_limit.getWidth() , set_speed_limit.getHeight(),
+                            R.color.purple_other, getApplicationContext(), constraintLayout,set_speed_limit.getLeft() + 9, set_speed_limit.getTop() + 400, set );
                     created_button = true;
-
                     button.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             String limit = editText.getText().toString();
                             try {
                                 float limit_f = Float.parseFloat(limit);
-
                                 save(limit_f);
                                 created_button = false;
                                 constraintLayout.removeView(button);
@@ -109,9 +98,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             }catch (Exception NumberFormatException){
                                 editText.setText("Invalid Input!");
                             }
-
                         }
                     });
+
                 }
 
             }
@@ -119,11 +108,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
 
-
+public void check_speed_violations(View view){
+        Intent intent = new Intent(view.getContext(), MainActivity2.class);
+        startActivity(intent);
+}
 
 
     public void gps(View view) {
-        //textView.setText("In func");
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.
@@ -136,7 +128,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     public void onLocationChanged(Location location) {
         double  x = location.getLatitude();
         double y = location.getLongitude();
-        textView.setText(String.valueOf(location.getSpeed()));
+        double speed = location.getSpeed();
+        Long tsLong = System.currentTimeMillis()/1000;
+
+        textView.setText(String.valueOf(speed));
+        if(preferences.contains("limit")){
+            float limit = preferences.getFloat("limit", 0);
+            if(speed > limit){
+                textView.setText("STAMATA RE MALAKA");
+                save(x, y, tsLong, speed);
+            }
+        }
 
     }
 
@@ -155,10 +157,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     }
 
-
+    public void save(double x, double y, Long time, double speed){
+        ContentValues values = new ContentValues();
+        values.put("timestamp", time);
+        values.put("latitude", x);
+        values.put("longtitude", y);
+        values.put("speed", speed);
+        db.insert("Location",null, values);
+    }
     public void save(float limit){
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("limit", String.valueOf(limit) );
+        editor.putFloat("limit", limit );
         editor.apply();
+        //textView.setText(String.valueOf(preferences.getFloat("limit", 0)));
     }
 }
