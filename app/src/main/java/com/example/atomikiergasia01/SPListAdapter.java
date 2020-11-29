@@ -11,15 +11,20 @@ import java.util.List;
 
 public class SPListAdapter extends BaseAdapter {
     public List<String> timestamps;
-    public List<String> info;
+    public List<String> latitude;
+    public List<String> longtitude;
+    public List<String> speed;
 
     public LayoutInflater layoutInflater;
     public Context context;
 
-    public SPListAdapter(Context aContext, List<String> listData, List<String> listData2) {
+    public SPListAdapter(Context aContext, List<String> listData, List<String> listData2, List<String> listData3, List<String> listData4) {
         this.context = aContext;
         this.timestamps = listData;
-        this.info = listData2;
+        this.latitude = listData2;
+        this.longtitude = listData3;
+        this.speed = listData4;
+
         layoutInflater = LayoutInflater.from(aContext);
     }
 
@@ -43,16 +48,22 @@ public class SPListAdapter extends BaseAdapter {
         if (convertView == null) {
             convertView = layoutInflater.inflate(R.layout.geo_item, null);
             holder = new ViewHolder();
+            //holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
             holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
-            holder.info = (TextView) convertView.findViewById(R.id.information);
+            holder.latitude = (TextView) convertView.findViewById(R.id.latitude);
+            holder.longtitude = (TextView) convertView.findViewById(R.id.longtitude);
+            holder.speed = (TextView) convertView.findViewById(R.id.speed);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
 
 
+        //holder.timestamp.setText(this.timestamps.get(position));
         holder.timestamp.setText(this.timestamps.get(position));
-        holder.info.setText(this.info.get(position));
+        holder.latitude.setText(this.latitude.get(position));
+        holder.longtitude.setText(this.longtitude.get(position));
+        holder.speed.setText(this.speed.get(position));
 
         return convertView;
     }
@@ -60,7 +71,12 @@ public class SPListAdapter extends BaseAdapter {
 
     static class ViewHolder {
         TextView timestamp;
-        TextView info;
+        TextView latitude;
+        TextView longtitude;
+        TextView speed;
+
+
+
     }
 
 }
