@@ -1,5 +1,6 @@
 package com.example.atomikiergasia01;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -23,6 +24,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.speech.RecognizerIntent;
 import android.text.Editable;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +35,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
@@ -40,10 +43,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     EditText editText;
     SQLiteDatabase db;
     TextView textView;
-    TextView test;
     LocationManager locationManager;
     Button set_speed_limit;
     Button check_speed_violations;
+    Button activate;
+    Button deactivate;
+    Button speed_limit_violations;
+    private static final int RECORDING_RESULT = 1000;
+
 
     public static boolean created_button = false;
     public static boolean detected_speed_violation = false;
@@ -57,21 +64,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
+        activate = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
-        test = findViewById(R.id.textView2);
+
         check_speed_violations = findViewById(R.id.button4);
         ConstraintLayout constraintLayout = (ConstraintLayout)findViewById(R.id.constraint_layout);
         ConstraintSet set = new ConstraintSet();
         db = openOrCreateDatabase("GeoDB", Context.MODE_PRIVATE,null);
-
+        deactivate = findViewById(R.id.button6);
 
         db.execSQL("CREATE TABLE IF NOT EXISTS Location(timestamp INTEGER ,latitude TEXT,longtitude TEXT, speed TEXT )");
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         set_speed_limit = findViewById(R.id.button2);
-
+        speed_limit_violations = findViewById(R.id.button4);
         check_speed_violations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,6 +132,38 @@ public void check_speed_violations(View view){
         startActivity(intent);
 }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode==RECORDING_RESULT && resultCode==RESULT_OK){
+            ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            //textView.setText(matches.get(0));
+            if (matches.contains("activate"))
+                //getWindow().getDecorView().setBackgroundColor(Color.RED);
+                activate.performClick();
+            if (matches.contains("deactivate"))
+                //getWindow().getDecorView().setBackgroundColor(Color.BLUE);
+                deactivate.performClick();
+            if (matches.contains("speed limit violations"))
+                speed_limit_violations.performClick();
+
+                //getWindow().getDecorView().setBackgroundColor(Color.YELLOW);
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        locationManager.removeUpdates(this);
+    }
+
+    public void deactivate(View view){
+        textView.setText("Inactive");
+        locationManager.removeUpdates(this);
+
+    }
+
 
     public void gps(View view) {
 
@@ -132,6 +173,7 @@ public void check_speed_violations(View view){
                     requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},234);
             return;
         }
+        textView.setText("0.0");
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);}
 
     @Override
@@ -140,7 +182,7 @@ public void check_speed_violations(View view){
         double speed = location.getSpeed();
         double xx = location.getLatitude();
         double yy = location.getLongitude();
-        test.setText(String.valueOf(xx) + "," + String.valueOf(yy));
+        //test.setText(String.valueOf(xx) + "," + String.valueOf(yy));
 
 
 
@@ -199,5 +241,13 @@ public void check_speed_violations(View view){
         editor.putFloat("limit", limit );
         editor.apply();
         //textView.setText(String.valueOf(preferences.getFloat("limit", 0)));
+    }
+
+
+    public void recognize(View view){
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"Please say something!");
+        startActivityForResult(intent,RECORDING_RESULT);
     }
 }
