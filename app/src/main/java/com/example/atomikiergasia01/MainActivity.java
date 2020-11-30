@@ -1,5 +1,4 @@
 package com.example.atomikiergasia01;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,27 +15,18 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.speech.RecognizerIntent;
-import android.text.Editable;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
     SharedPreferences preferences;
@@ -49,42 +39,53 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Button activate;
     Button deactivate;
     Button speed_limit_violations;
+    public TextView warning;
+    public TextView limit_txt;
+
     private static final int RECORDING_RESULT = 1000;
 
 
     public static boolean created_button = false;
     public static boolean detected_speed_violation = false;
-
     public static String x = "0";
     public static String y =  "0";
     public static String speed_v =  "0";
     public static Long timestamp;
+    public static TTS tts;
+
 
     public static final String SHARED_PREFS = "speed_limit";
+    // Initialise components and event listeners
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        limit_txt = findViewById(R.id.txt4);
+
+        warning = findViewById(R.id.textView3);
         activate = findViewById(R.id.button);
         textView = findViewById(R.id.textView);
-
         check_speed_violations = findViewById(R.id.button4);
         ConstraintLayout constraintLayout = (ConstraintLayout)findViewById(R.id.constraint_layout);
         ConstraintSet set = new ConstraintSet();
         db = openOrCreateDatabase("GeoDB", Context.MODE_PRIVATE,null);
         deactivate = findViewById(R.id.button6);
-
+        tts = new TTS(this);
         db.execSQL("CREATE TABLE IF NOT EXISTS Location(timestamp INTEGER ,latitude TEXT,longtitude TEXT, speed TEXT )");
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        if(preferences.contains("limit")){
+            limit_txt.setText("Limit: " + String.valueOf(preferences.getFloat("limit", 0)));
+        }
         set_speed_limit = findViewById(R.id.button2);
         speed_limit_violations = findViewById(R.id.button4);
         check_speed_violations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(v.getContext(), MainActivity2.class);
+
                 startActivity(intent);
             }
         });
@@ -95,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             @Override
             public void onClick(View v) {
                 if(created_button == false) {
-                     //a constraint layout pre-made in design view
+//Programmatically create components to save a speed limit in sharedpreferences
 
                     EditText editText = Create_Component.create_EditText(set_speed_limit.getWidth() + 20,set_speed_limit.getHeight() - 10,
                             R.color.black, getApplicationContext(), constraintLayout, set_speed_limit.getLeft(), set_speed_limit.getTop() + 200, set );
@@ -125,29 +126,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         });
     }
-
-
 public void check_speed_violations(View view){
         Intent intent = new Intent(view.getContext(), MainActivity2.class);
         startActivity(intent);
 }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode==RECORDING_RESULT && resultCode==RESULT_OK){
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            //textView.setText(matches.get(0));
             if (matches.contains("activate"))
-                //getWindow().getDecorView().setBackgroundColor(Color.RED);
                 activate.performClick();
             if (matches.contains("deactivate"))
-                //getWindow().getDecorView().setBackgroundColor(Color.BLUE);
                 deactivate.performClick();
             if (matches.contains("speed limit violations"))
                 speed_limit_violations.performClick();
-
-                //getWindow().getDecorView().setBackgroundColor(Color.YELLOW);
         }
 
     }
@@ -158,10 +151,10 @@ public void check_speed_violations(View view){
         locationManager.removeUpdates(this);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void deactivate(View view){
         textView.setText("Inactive");
         locationManager.removeUpdates(this);
-
     }
 
 
@@ -176,37 +169,40 @@ public void check_speed_violations(View view){
         textView.setText("0.0");
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);}
 
+    @SuppressLint("ResourceAsColor")
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onLocationChanged(Location location) {
 
         double speed = location.getSpeed();
         double xx = location.getLatitude();
         double yy = location.getLongitude();
-        //test.setText(String.valueOf(xx) + "," + String.valueOf(yy));
-
-
-
         textView.setText(String.valueOf(speed));
         if(preferences.contains("limit")){
             float limit = preferences.getFloat("limit", 0);
             // save the timestamp from when the speed violation occured
             if(speed > limit ){
                 textView.setText("STAMATA MALAKA");
-                if(detected_speed_violation == false){
-                timestamp = System.currentTimeMillis()/1000;
-                x = String.valueOf(xx);
-                y = String.valueOf(yy);
-                detected_speed_violation = true; }
+                if(!detected_speed_violation){
+                    speak();
+                    warning.setText("Danger!Slow down!");
+                    getWindow().getDecorView().setBackgroundColor(Color.RED);
+                    timestamp = System.currentTimeMillis()/1000;
+                    x = String.valueOf(xx);
+                    y = String.valueOf(yy);
+                    detected_speed_violation = true; }
             }
             // keep values while the speed limit is being violated
-            if(speed > limit && detected_speed_violation == true ){
+            if(speed > limit && detected_speed_violation){
                 speed_v = String.valueOf(speed);
 
             //Once the speed has dropped below out limit but we previously detected a speed violation
             //save the last speed we recorded when the user was violating speed limits
-            }else if(speed <= limit && detected_speed_violation == true){
+            }else if(speed <= limit && detected_speed_violation){
                 save(x, y, timestamp, speed_v);
                 detected_speed_violation = false;
+                getWindow().getDecorView().setBackgroundColor(Color.WHITE);
+                warning.setText("");
             }
 
         }
@@ -240,9 +236,16 @@ public void check_speed_violations(View view){
         SharedPreferences.Editor editor = preferences.edit();
         editor.putFloat("limit", limit );
         editor.apply();
+
+        limit_txt.setText("Limit: " + String.valueOf(preferences.getFloat("limit", 0)));
+
         //textView.setText(String.valueOf(preferences.getFloat("limit", 0)));
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void speak(){
+        tts.speak("Danger! Slow down!");
+    }
 
     public void recognize(View view){
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);

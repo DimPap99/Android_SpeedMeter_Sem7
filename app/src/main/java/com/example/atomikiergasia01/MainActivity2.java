@@ -39,7 +39,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
     SQLiteDatabase db;
     public ListView listView;
     Button back;
-    TextView test;
+    
     private MapView mapView;
     private GoogleMap gmap;
     private static boolean map_ready = false;
@@ -50,7 +50,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-        test = findViewById(R.id.test);
+        
         listView = findViewById(R.id.listview);
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
@@ -78,7 +78,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
                 String selected_value = spinner.getSelectedItem().toString();
-                test.setText(selected_value);
+
 
                 //Empty the lists on item change to repopulate the list view
                 timestamps = new ArrayList<String>();
@@ -86,9 +86,24 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
                 longtitude = new ArrayList<String>();
                 speed = new ArrayList<String>();
                 long current_day_timestamp = System.currentTimeMillis()/1000;
+                Cursor cursor;
+                int s = 60*60 ;
 
-                int s = 60*60;
-                Cursor cursor = db.rawQuery("SELECT * FROM Location  WHERE  " + String.valueOf(current_day_timestamp) + "-timestamp >=" + String.valueOf(s), null);
+                if(selected_value.equals("Day")){
+                    s = 60*60*24;
+                }else if(selected_value.equals("Week")){
+                    s = 60*60*24 * 7;
+                }else if(selected_value.equals("Month")){
+                    s = 60*60*24 * 30;
+                }
+
+                if(selected_value.equals("All")){
+                    cursor = db.rawQuery("SELECT * FROM Location", null);
+                }else{
+                    cursor = db.rawQuery("SELECT * FROM Location  WHERE  " + String.valueOf(current_day_timestamp) + "-timestamp <=" + String.valueOf(s), null);
+
+                }
+
                // listView.setAdapter(null); //Empty the list view
 
 
@@ -158,7 +173,7 @@ public void delete(View view){
             String whereClause = "timestamp=?";
             String[] whereArgs = new String[] { String.valueOf(last_selected_timestamp) };
             db.delete(table, whereClause, whereArgs);
-            finish();
+
             startActivity(getIntent());
     }
 

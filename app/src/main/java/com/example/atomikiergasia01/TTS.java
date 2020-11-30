@@ -17,7 +17,7 @@ public class TTS {
                 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                 @Override
                 public void onInit(int i) {
-                    tts.setLanguage(Locale.forLanguageTag("EL"));
+                    tts.setLanguage(Locale.ENGLISH);
                 }
             };
     public TTS(Context context) {
