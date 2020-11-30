@@ -103,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                     Button button = Create_Component.create_Button(set_speed_limit.getWidth() , set_speed_limit.getHeight(),
                             R.color.purple_other, getApplicationContext(), constraintLayout,set_speed_limit.getLeft() + 9, set_speed_limit.getTop() + 400, set );
+                    //use the boolean created_button in order to create only 1 at a time
                     created_button = true;
                     button.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -175,8 +176,7 @@ public void check_speed_violations(View view){
     public void onLocationChanged(Location location) {
 
         double speed = location.getSpeed();
-        double xx = location.getLatitude();
-        double yy = location.getLongitude();
+
         textView.setText(String.valueOf(speed));
         if(preferences.contains("limit")){
             float limit = preferences.getFloat("limit", 0);
@@ -188,8 +188,8 @@ public void check_speed_violations(View view){
                     warning.setText("Danger!Slow down!");
                     getWindow().getDecorView().setBackgroundColor(Color.RED);
                     timestamp = System.currentTimeMillis()/1000;
-                    x = String.valueOf(xx);
-                    y = String.valueOf(yy);
+                    x = String.valueOf(location.getLatitude());
+                    y = String.valueOf(location.getLongitude());
                     detected_speed_violation = true; }
             }
             // keep values while the speed limit is being violated
@@ -236,17 +236,14 @@ public void check_speed_violations(View view){
         SharedPreferences.Editor editor = preferences.edit();
         editor.putFloat("limit", limit );
         editor.apply();
-
         limit_txt.setText("Limit: " + String.valueOf(preferences.getFloat("limit", 0)));
-
-        //textView.setText(String.valueOf(preferences.getFloat("limit", 0)));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void speak(){
         tts.speak("Danger! Slow down!");
     }
-
+//Use TTS to perform Activation/Deactivation and check limit violations
     public void recognize(View view){
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);

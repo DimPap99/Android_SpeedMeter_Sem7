@@ -87,7 +87,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
                 speed = new ArrayList<String>();
                 long current_day_timestamp = System.currentTimeMillis()/1000;
                 Cursor cursor;
-                int s = 60*60 ;
+                int s = 0;
 
                 if(selected_value.equals("Day")){
                     s = 60*60*24;
@@ -104,25 +104,14 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
 
                 }
 
-               // listView.setAdapter(null); //Empty the list view
-
-
-                int timestamp_val;
                 if (cursor.getCount() > 0) {
-
                     while (cursor.moveToNext()) {
-
-
-
-
                         timestamps.add(String.valueOf(cursor.getString(0))) ;
                         latitude.add(String.valueOf(cursor.getString(1)));
                         longtitude.add(String.valueOf(cursor.getString(2)));
                         speed.add(String.valueOf(cursor.getString(3)));}
 
                 }
-
-
 
                 listView.setAdapter(new SPListAdapter(getApplicationContext(), timestamps, latitude, longtitude, speed));
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -229,10 +218,5 @@ public void delete(View view){
     public void onMapReady(GoogleMap googleMap) {
         gmap = googleMap;
         map_ready = true;
-//        LatLng sydney = new LatLng(-33.852, 151.211);
-//        googleMap.addMarker(new MarkerOptions()
-//                .position(sydney)
-//                .title("Marker in Sydney"));
-//        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 }

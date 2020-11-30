@@ -12,7 +12,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
 public class Create_Component {
-
+// set width/height etc and then add constraints.Finally add it to the laylout
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public static Button create_Button(int width, int height, int color, Context context, ConstraintLayout constraintLayout, int posx, int posy, ConstraintSet set){
 
