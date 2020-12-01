@@ -18,7 +18,7 @@ public class TTS {
                 @Override
                 public void onInit(int i) {
                     tts.setLanguage(Locale.ENGLISH);
-                }
+                } //choose english as language
             };
     public TTS(Context context) {
         tts = new TextToSpeech(context,initListener);
@@ -26,7 +26,7 @@ public class TTS {
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void speak(String message){
         tts.speak(message,TextToSpeech.QUEUE_ADD,null,null);
-    }
+    } // use the tts object to speak the message provided on the method
 
 
 }

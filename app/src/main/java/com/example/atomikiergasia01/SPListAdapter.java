@@ -17,7 +17,7 @@ public class SPListAdapter extends BaseAdapter {
 
     public LayoutInflater layoutInflater;
     public Context context;
-
+//init use lists to populate the textviews of the geo_item.xml
     public SPListAdapter(Context aContext, List<String> listData, List<String> listData2, List<String> listData3, List<String> listData4) {
         this.context = aContext;
         this.timestamps = listData;
@@ -27,7 +27,7 @@ public class SPListAdapter extends BaseAdapter {
 
         layoutInflater = LayoutInflater.from(aContext);
     }
-
+//Standard Base Adapter methods
     @Override
     public int getCount() {
         return timestamps.size();
@@ -47,8 +47,8 @@ public class SPListAdapter extends BaseAdapter {
         ViewHolder holder;
         if (convertView == null) {
             convertView = layoutInflater.inflate(R.layout.geo_item, null);
+            // give to the holderview properties the references to the Textviews
             holder = new ViewHolder();
-            //holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
             holder.timestamp = (TextView) convertView.findViewById(R.id.timestamp);
             holder.latitude = (TextView) convertView.findViewById(R.id.latitude);
             holder.longtitude = (TextView) convertView.findViewById(R.id.longtitude);
@@ -58,8 +58,7 @@ public class SPListAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
-
-        //holder.timestamp.setText(this.timestamps.get(position));
+        // set the textviews based on the position of the item in the listview
         holder.timestamp.setText(this.timestamps.get(position));
         holder.latitude.setText(this.latitude.get(position));
         holder.longtitude.setText(this.longtitude.get(position));
@@ -68,6 +67,7 @@ public class SPListAdapter extends BaseAdapter {
         return convertView;
     }
 
+    //Class that acts as a struct
 
     static class ViewHolder {
         TextView timestamp;

@@ -27,6 +27,7 @@ public class Create_Component {
         button.setTextColor(Color.parseColor("#FFFFFF"));
         button.setId(View.generateViewId());
         constraintLayout.addView(button);
+        // set the constraint on the component
         set.clone(constraintLayout);
         set.connect(button.getId(), ConstraintSet.LEFT, constraintLayout.getId(), ConstraintSet.LEFT, posx);
         set.connect(button.getId(), ConstraintSet.TOP, constraintLayout.getId(), ConstraintSet.TOP, posy);
@@ -34,6 +35,7 @@ public class Create_Component {
         return button;
 
     }
+// set width/height etc and then add constraints.Finally add it to the laylout
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     public static EditText create_EditText(int width, int height, int color, Context context, ConstraintLayout constraintLayout, int posx, int posy, ConstraintSet set){

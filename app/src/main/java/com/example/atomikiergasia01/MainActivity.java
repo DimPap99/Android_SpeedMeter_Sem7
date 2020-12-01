@@ -44,12 +44,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private static final int RECORDING_RESULT = 1000;
 
-
-    public static boolean created_button = false;
-    public static boolean detected_speed_violation = false;
-    public static String x = "0";
-    public static String y =  "0";
-    public static String speed_v =  "0";
+//static variables used to monitor states
+    public static boolean created_button = false; //monitor whether we ve dynamically created a button to save a speed limit
+    public static boolean detected_speed_violation = false; // boolean to distinct between states of speed violations ( No violation/ Violated a limit/ Over speed limit and detected_speed_violation
+    // -> True then the speed limit is still getting violated
+    public static String x = "0"; //save the lat when a violation occured
+    public static String y =  "0"; //save the lgt when a violation occured
+    public static String speed_v =  "0";  //save the top speed of a violation
     public static Long timestamp;
     public static TTS tts;
 
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         preferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        //check if the key exists
         if(preferences.contains("limit")){
             limit_txt.setText("Limit: " + String.valueOf(preferences.getFloat("limit", 0)));
         }
@@ -89,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 startActivity(intent);
             }
         });
-
+//Set event listener to the set speed limit button in order to save  a speed limit
         set_speed_limit.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceAsColor")
             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -131,6 +133,7 @@ public void check_speed_violations(View view){
         Intent intent = new Intent(view.getContext(), MainActivity2.class);
         startActivity(intent);
 }
+//Based on the TTS results perform button actions
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -145,7 +148,7 @@ public void check_speed_violations(View view){
         }
 
     }
-
+// onpause close the location manager updates
     @Override
     protected void onPause() {
         super.onPause();
@@ -158,31 +161,33 @@ public void check_speed_violations(View view){
         locationManager.removeUpdates(this);
     }
 
-
+//the method that the activate button uses to activate the location manager
     public void gps(View view) {
-
+//check the permissions we ve written on the manifest xml that have to do with the Location Manager (ACCESS_FINE_LOCATION, etc...
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.
                     requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},234);
             return;
         }
+        //activate the location manager. minTime,minDist = 0 to give updateds constantly
         textView.setText("0.0");
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);}
 
+        //standard location manager methods
     @SuppressLint("ResourceAsColor")
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public void onLocationChanged(Location location) {
-
+//get the speed
         double speed = location.getSpeed();
-
+//check for a speed limit
         textView.setText(String.valueOf(speed));
         if(preferences.contains("limit")){
             float limit = preferences.getFloat("limit", 0);
             // save the timestamp from when the speed violation occured
             if(speed > limit ){
-                textView.setText("STAMATA MALAKA");
+//initial point of speed violation
                 if(!detected_speed_violation){
                     speak();
                     warning.setText("Danger!Slow down!");
@@ -223,7 +228,7 @@ public void check_speed_violations(View view){
     public void onProviderDisabled(String s) {
 
     }
-
+//save values to DB
     public void save(String x, String y, Long time, String speed){
         ContentValues values = new ContentValues();
         values.put("timestamp", time);
@@ -232,13 +237,14 @@ public void check_speed_violations(View view){
         values.put("speed", String.valueOf(speed));
         db.insert("Location",null, values);
     }
+//save values to SharedPreferences
     public void save(float limit){
         SharedPreferences.Editor editor = preferences.edit();
         editor.putFloat("limit", limit );
         editor.apply();
         limit_txt.setText("Limit: " + String.valueOf(preferences.getFloat("limit", 0)));
     }
-
+//use the tts to speak
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     public void speak(){
         tts.speak("Danger! Slow down!");

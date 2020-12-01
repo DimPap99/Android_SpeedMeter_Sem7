@@ -30,8 +30,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+//implement OnMapReadyCallback to use the mapview
 public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallback {
+    //init
     public List<String> timestamps;
     public List<String> latitude;
     public List<String> longtitude;
@@ -44,22 +45,23 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
     private GoogleMap gmap;
     private static boolean map_ready = false;
     private static final String MAP_VIEW_BUNDLE_KEY = "MapViewBundleKey";
-    public static int last_selected_timestamp= 0;
-    public static final int day = 60*60*24;
+    public static int last_selected_timestamp= 0; // used for deleting a timestamp
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-        
+
         listView = findViewById(R.id.listview);
         Bundle mapViewBundle = null;
         if (savedInstanceState != null) {
             mapViewBundle = savedInstanceState.getBundle(MAP_VIEW_BUNDLE_KEY);
         }
-
+//init the mapview
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(mapViewBundle);
         mapView.getMapAsync(this);
+        //open the DB
         db = openOrCreateDatabase("GeoDB", Context.MODE_PRIVATE, null);
 
 
@@ -80,30 +82,30 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
                 String selected_value = spinner.getSelectedItem().toString();
 
 
-                //Empty the lists on item change to repopulate the list view
+                //Empty/ re-init the lists on item change to repopulate the list view
                 timestamps = new ArrayList<String>();
                 latitude = new ArrayList<String>();
                 longtitude = new ArrayList<String>();
                 speed = new ArrayList<String>();
                 long current_day_timestamp = System.currentTimeMillis()/1000;
                 Cursor cursor;
-                int s = 0;
+                int s = 0; //seconds
 
                 if(selected_value.equals("Day")){
-                    s = 60*60*24;
+                    s = 60*60*24; // day seconds
                 }else if(selected_value.equals("Week")){
-                    s = 60*60*24 * 7;
+                    s = 60*60*24 * 7; //week seconds
                 }else if(selected_value.equals("Month")){
-                    s = 60*60*24 * 30;
+                    s = 60*60*24 * 30; //month seconds
                 }
-
+// choose rows based on the filter choice
                 if(selected_value.equals("All")){
                     cursor = db.rawQuery("SELECT * FROM Location", null);
                 }else{
                     cursor = db.rawQuery("SELECT * FROM Location  WHERE  " + String.valueOf(current_day_timestamp) + "-timestamp <=" + String.valueOf(s), null);
 
                 }
-
+//add elements in the list to populate the listview
                 if (cursor.getCount() > 0) {
                     while (cursor.moveToNext()) {
                         timestamps.add(String.valueOf(cursor.getString(0))) ;
@@ -114,6 +116,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
                 }
 
                 listView.setAdapter(new SPListAdapter(getApplicationContext(), timestamps, latitude, longtitude, speed));
+                //Set an event onclick on listview items --> On click show the row Lat/Longt on the mapview
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
@@ -126,6 +129,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
                         String toast_str = "Location for timestamp: " + timestamp + " and Speed(km/h): " + speed;
                         Toast toast = Toast.makeText(getApplicationContext(), toast_str, Toast.LENGTH_SHORT);
                         toast.show();
+                        //if the map has loaded add marker based on the clicked listview row
                         if(map_ready == true){
                             LatLng pos = new LatLng(Double.parseDouble(lat), Double.parseDouble(lgt));
                             gmap.addMarker(new MarkerOptions()
@@ -145,7 +149,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
         });
 
 
-        back = findViewById(R.id.button3);
+        back = findViewById(R.id.button3); // back to MainActivity button
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -155,7 +159,7 @@ public class MainActivity2 extends AppCompatActivity implements OnMapReadyCallba
         });
 
     }
-
+//delete a row from the db based on the timestamp
 public void delete(View view){
         if(last_selected_timestamp != 0){
             String table = "Location";
@@ -168,7 +172,7 @@ public void delete(View view){
 
 }
 
-
+//Standard methods for the mapview
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
